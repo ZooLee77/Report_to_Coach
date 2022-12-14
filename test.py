@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from statistics import mean
 from scipy.signal import savgol_filter
 
-fit_file = FitFile('/Users/agnes/Downloads/8234833773_ACTIVITY.fit')
+fit_file = FitFile('8234833773_ACTIVITY.fit')
 
 # for record in fit_file.get_messages("record"):
 #     # Records can contain multiple pieces of data (ex: timestamp, latitude, longitude, etc)
