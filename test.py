@@ -6,11 +6,14 @@ import numpy as np
 from statistics import mean
 from scipy.signal import savgol_filter
 import datetime
+from tabulate import tabulate
+import pandas as pd
+from IPython.display import display, HTML
 
-fit_file = FitFile('/Users/agnes/Downloads/10153960586_ACTIVITY.fit')
+fit_file = FitFile('10168131101_ACTIVITY.fit')
 
 
-# for record in fit_file.get_messages("record"):
+# for record in fit_file.get_messages("lap"):
 #     # Records can contain multiple pieces of data (ex: timestamp, latitude, longitude, etc)
 #     for data in record:
 #         # Print the name and value of the data (and the units if it has any)
@@ -18,7 +21,7 @@ fit_file = FitFile('/Users/agnes/Downloads/10153960586_ACTIVITY.fit')
 #             print(f"{data.name}, {data.value}, {data.units}")
 #         else:
 #             print(f"{data.name} {data.value}")
-
+#
 
 #for record in fit_file.get_messages("record"):
 #     # Records can contain multiple pieces of data (ex: timestamp, latitude, longitude, etc)
@@ -38,13 +41,13 @@ breath = []
 i = 0
 temp_avarage = 0
 x = []
-filename_suffix = '2022_12_18_20_29'
+filename_prefix = '2022_12_21_20_24'
 
 for record in fit_file.get_messages("record"):
     # Records can contain multiple pieces of data (ex: timestamp, latitude, longitude, etc)
     for data in record:
         # Print the name and value of the data (and the units if it has any)
-        if data.name == 'power':
+        if data.name == ('Power') or data.name == ('power'):
             i = i + 1
             power.append(data.value)
             temp_smoth.append(data.value)
@@ -72,10 +75,67 @@ for record in fit_file.get_messages("record"):
     if len(breath) < len(x) :
         breath.append(20)
 
+lap_start_time = []
+lap_time_stamps = []
+lap_total_elapsed_time = []
+lap_distance = []
+lap_average_hr = []
+lap_max_hr = []
+lap_average_speed = []
+lap_max_speed = []
+lap_ascent = []
+lap_descent = []
+lap_power = []
+
+for lap in fit_file.get_messages("lap"):
+    # Records can contain multiple pieces of data (ex: timestamp, latitude, longitude, etc)
+    for data in lap:
+        # Print the name and value of the data (and the units if it has any)
+        if data.name == ('start_time') :
+            lap_start_time.append(data.value)
+        if data.name == 'timestamp':
+            lap_time_stamps.append(data.value)
+        if data.name == 'total_elapsed_time':
+            lap_total_elapsed_time.append(data.value)
+        if data.name == 'total_distance':
+            lap_distance.append(data.value)
+        if data.name == 'avg_heart_rate':
+            lap_average_hr.append(data.value)
+        if data.name == 'max_heart_rate':
+            lap_max_hr.append(data.value)
+        if data.name == 'enhanced_avg_speed':
+            if isinstance(data.value, float) :
+                lap_average_speed.append(data.value)
+        if data.name == 'enhanced_max_speed':
+            if isinstance(data.value, float) :
+                lap_max_speed.append(data.value)
+        if data.name == 'total_ascent':
+            lap_ascent.append(data.value)
+        if data.name == 'total_descent':
+            lap_descent.append(data.value)
+        if data.name == 'Lap Power':
+            lap_power.append(data.value)
+
+
+
+df = pd.DataFrame({"Kör kedző idő": lap_start_time, "Időpont": lap_time_stamps,
+                "lap_total_elapsed_time": lap_total_elapsed_time, "lap_distance": lap_distance,
+                "lap_average_hr": lap_average_hr, "lap_max_hr": lap_max_hr,
+                "lap_average_speed": lap_average_speed, "lap_max_speed": lap_max_speed,
+                "lap_ascent": lap_ascent, "lap_descent": lap_descent, "lap_power": lap_power})
+df.index += 1
+
+
+display(df)
+
+f = open('table.txt', 'w')
+f.write(tabulate(df, headers="keys", tablefmt="rounded_grid"))
+f.close()
 
 yhat = savgol_filter(power, 151, 3) # window size 51, polynomial order 3
 print('power',len(power))
 print('power_smoth',len(power_smoth))
+print('yhat',len(yhat))
 print('breath', len(breath))
 print('x', len(x))
 print('speed', len(speed))
@@ -111,7 +171,7 @@ ax2.set_ylabel('Pulzusszám')
 plt.xlim([0, len(breath)])
 xtick_formatter = mpl.ticker.FuncFormatter(timeTicks)
 ax1.xaxis.set_major_formatter(xtick_formatter)
-lns1 = ax1.plot(x, breath, color='#05C4EB', label='Sebesség')
+lns1 = ax1.plot(x, speed, color='#05C4EB', label='Sebesség')
 lns2 = ax2.plot(x, heart_rate, color='#ff0035', label='Pulzusszám')
 ax1.grid(True)
 
@@ -121,7 +181,7 @@ ax1.legend(lns, labs, loc=0)
 
 # plt.legend()
 plt.tight_layout()
-plt.savefig(filename_suffix+'_Speed_HR.png')
+plt.savefig(filename_prefix + '_Speed_HR.png')
 #plt.show()
 #plt.close()
 #print(start_time)
@@ -152,7 +212,7 @@ ax1.legend(lns, labs, loc=0)
 
 # plt.legend()
 plt.tight_layout()
-plt.savefig(filename_suffix+'_Breath_HR_Speed.png')
+plt.savefig(filename_prefix + '_Breath_HR_Speed.png')
 #plt.show()
 
 fig, ax1 = plt.subplots(figsize=(15, 5.2))
@@ -181,7 +241,7 @@ ax1.legend(lns, labs, loc=0)
 
 # plt.legend()
 plt.tight_layout()
-plt.savefig(filename_suffix+'_Breath_HR_Power.png')
+plt.savefig(filename_prefix + '_Breath_HR_Power.png')
 #plt.show()
 
 
@@ -205,7 +265,7 @@ ax1.legend(lns, labs, loc=0)
 
 # plt.legend()
 plt.tight_layout()
-plt.savefig(filename_suffix+'_Breath_HR.png')
+plt.savefig(filename_prefix + '_Breath_HR.png')
 #plt.show()
 
 
@@ -228,7 +288,7 @@ ax1.legend(lns, labs, loc=0)
 
 # plt.legend()
 plt.tight_layout()
-plt.savefig(filename_suffix+'_Cadence_HR.png')
+plt.savefig(filename_prefix + '_Cadence_HR.png')
 #plt.show()
 
 
@@ -244,7 +304,7 @@ ax.grid(True)
 
 plt.legend()
 plt.tight_layout()
-plt.savefig(filename_suffix+'_HR.png')
+plt.savefig(filename_prefix + '_HR.png')
 #plt.show()
 #print(plt.style.available)
 #xtick_locator = AutoDateLocator()
