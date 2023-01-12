@@ -116,9 +116,9 @@ def read_fit_file_laps(filename):
         # Records can contain multiple pieces of data (ex: timestamp, latitude, longitude, etc)
         for data in lap:
             # Print the name and value of the data (and the units if it has any)
-            if data.name == 'start_time' :
-#                if start_time == 0 :
-#                    start_time = data.value
+            if data.name == 'start_time':
+                #                if start_time == 0 :
+                #                    start_time = data.value
                 lap_start_time.append(data.value)
             if data.name == 'timestamp':
                 lap_time_stamps.append(data.value)
@@ -131,10 +131,10 @@ def read_fit_file_laps(filename):
             if data.name == 'max_heart_rate':
                 lap_max_hr.append(data.value)
             if data.name == 'enhanced_avg_speed':
-                if isinstance(data.value, float) :
+                if isinstance(data.value, float):
                     lap_average_speed.append(data.value)
             if data.name == 'enhanced_max_speed':
-                if isinstance(data.value, float) :
+                if isinstance(data.value, float):
                     lap_max_speed.append(data.value)
             if data.name == 'total_ascent':
                 lap_ascent.append(data.value)
@@ -154,35 +154,45 @@ def read_fit_file_laps(filename):
             if data.name == 'wkt_step_index':
                 lap_workout_step_index.append(data.value)
     for i in lap_time_stamps:
-        lap_sum_time.append(i-lap_start_time[0])
+        lap_sum_time.append(i - lap_start_time[0])
     lap_start_time.append(min(lap_start_time))
     lap_time_stamps.append(max(lap_time_stamps))
-    lap_total_elapsed_time.append(max(lap_time_stamps)-min(lap_start_time))
-    lap_sum_time.append(max(lap_time_stamps)-min(lap_start_time))
-    lap_average_speed.append(sum(lap_distance)/(max(lap_time_stamps)-min(lap_start_time)).total_seconds())
+    lap_total_elapsed_time.append(max(lap_time_stamps) - min(lap_start_time))
+    lap_sum_time.append(max(lap_time_stamps) - min(lap_start_time))
+    lap_average_speed.append(sum(lap_distance) / (max(lap_time_stamps) - min(lap_start_time)).total_seconds())
     lap_distance.append(sum(lap_distance))
     lap_average_hr.append(sum(lap_average_hr) / len(lap_average_hr))
     lap_max_hr.append(max(lap_max_hr))
-    lap_max_speed.append(max(lap_max_speed))
-    if isinstance(lap_ascent[0],int):
+    if len(lap_max_speed) > 0:
+        lap_max_speed.append(max(lap_max_speed))
+    if isinstance(lap_ascent[0], int):
         lap_ascent.append(sum(lap_ascent))
-    if isinstance(lap_descent[0],int):
+    if isinstance(lap_descent[0], int):
         lap_descent.append(sum(lap_descent))
     lap_sport.append(lap_sport[-1])
-    lap_power.append(sum(lap_power)/len(lap_power))
+    if len(lap_power) > 0:
+        lap_power.append(sum(lap_power) / len(lap_power))
     # ellenorizni!
-    lap_average_cadence.append(sum(lap_average_cadence)/len(lap_average_cadence))
+    if isinstance(lap_average_cadence[0], int):
+        lap_average_cadence.append(sum(lap_average_cadence) / len(lap_average_cadence))
     lap_max_cadence.append(max(lap_max_cadence))
-    if isinstance(lap_normalized_power[0],int):
-        lap_normalized_power.append(sum(lap_normalized_power)/len(lap_normalized_power))
+    if isinstance(lap_normalized_power[0], int):
+        lap_normalized_power.append(sum(lap_normalized_power) / len(lap_normalized_power))
     lap_workout_step_index.append(np.nan)
 
     print('lap_start_time', len(lap_start_time))
     print('lap_time_stamps', len(lap_time_stamps))
     print('lap_power', len(lap_power))
+
+    # workout_dic = read_fit_file_workout(fit_file_name)
+    # print(workout_dic)
+    # for file in fit_file_list:
+    # workout_dic = read_fit_file_workout(file)
+    # print(workout_dic)
     laps_df = pd.DataFrame({"Kör kezdő idő": lap_start_time, "Kör vége": lap_time_stamps,
-                    "Kör idő": lap_total_elapsed_time, "Összesített idő": lap_sum_time, "Távolság": lap_distance,
-                    "Átlagos pulzusszám": lap_average_hr, "Max. pulzus": lap_max_hr})
+                            "Kör idő": lap_total_elapsed_time, "Összesített idő": lap_sum_time,
+                            "Távolság": lap_distance,
+                            "Átlagos pulzusszám": lap_average_hr, "Max. pulzus": lap_max_hr})
 
     if lap_sport[0] == 'running':
         laps_df['Átlagos tempó'] = lap_average_speed
@@ -196,7 +206,8 @@ def read_fit_file_laps(filename):
     if isinstance(lap_descent[0], int):
         laps_df['Teljes emelkedés'] = lap_ascent
         laps_df['Teljes süllyedés'] = lap_descent
-    laps_df['Teljesítmény'] = lap_power
+    if len(lap_power) > 0:
+        laps_df['Teljesítmény'] = lap_power
     if isinstance(lap_normalized_power[0], int):
         laps_df['Normalized Teljesítmény'] = lap_normalized_power
     laps_df['Sport'] = lap_sport

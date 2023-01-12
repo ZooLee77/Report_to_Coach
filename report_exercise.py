@@ -23,7 +23,7 @@ for i in range(10):
         break
 
 activity_id = last_activity["activityId"]
-
+print(last_activity)
 fit_file_name = getc.download_activity(api, activity_id)
 
 fit_file_list = ['10153960586_ACTIVITY.fit', '10168131101_ACTIVITY.fit', '10176445328_ACTIVITY.fit',
