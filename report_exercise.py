@@ -1,18 +1,19 @@
-#from fitparse import FitFile
-#from matplotlib.dates import AutoDateFormatter, AutoDateLocator
-#from statistics import mean
-#from scipy.signal import savgol_filter
-#from IPython.display import display, HTML
-#from typing import Any
+# from fitparse import FitFile
+# from matplotlib.dates import AutoDateFormatter, AutoDateLocator
+# from statistics import mean
+# from scipy.signal import savgol_filter
+# from IPython.display import display, HTML
+# from typing import Any
 
-import matplotlib as mpl
+from matplotlib import ticker
 import matplotlib.pyplot as plt
 import numpy as np
 import datetime
 from tabulate import tabulate
-#import pandas as pd
+# import pandas as pd
 import read_fit_file_func as readfit
 import get_cloud_data as getc
+
 api = None
 
 for i in range(10):
@@ -39,46 +40,51 @@ workout_dic = readfit.read_fit_file_workout(fit_file_name)
 #     laps_dataframe = readfit.read_fit_file_laps(file)
 #     workout_dic = readfit.read_fit_file_workout(file)
 
-#print(start_time)
+# print(start_time)
 
 filename_prefix = laps_dataframe["Kör kezdő idő"].iloc[0].strftime("%Y_%m_%d_%H_%M_%S")
 
-laps_dataframe.insert(laps_dataframe.columns.get_loc("Max. pulzus")+1,'Min. pulzus',np.nan)
+laps_dataframe.insert(laps_dataframe.columns.get_loc("Max. pulzus") + 1, 'Min. pulzus', np.nan)
 for e in range(len(laps_dataframe.index)):
     temp_start = laps_dataframe["Kör kezdő idő"].iloc[e]
     temp_end = laps_dataframe["Kör vége"].iloc[e]
-    temp_min= records_dataframe.query(
+    temp_min = records_dataframe.query(
         'Rec_Timestamp > @temp_start and Rec_Timestamp < @temp_end').Heartrate.min()
-    laps_dataframe.loc[e+1,['Min. pulzus']]=temp_min
+    laps_dataframe.loc[e + 1, ['Min. pulzus']] = temp_min
     filt = ((records_dataframe['Rec_Timestamp'] >= temp_start) & (records_dataframe['Rec_Timestamp'] < temp_end))
-    if not np.isnan(laps_dataframe['Workout_index'][e+1]):
-        if not 'Workout_intensity' in laps_dataframe.keys():
+    if not np.isnan(laps_dataframe['Workout_index'][e + 1]):
+        if 'Workout_intensity' not in laps_dataframe.keys():
             laps_dataframe['Workout_intensity'] = np.nan
-        laps_dataframe.loc[e+1,['Workout_intensity']]=workout_dic['data']['Workout_intensity'][int(laps_dataframe['Workout_index'][e+1])]
-        if workout_dic['data']['Workout_target_type'][int(laps_dataframe['Workout_index'][e+1])]=='heart_rate':
-            if not 'Workout_HR_min' in records_dataframe.keys():
+        laps_dataframe.loc[e + 1, ['Workout_intensity']] = workout_dic['data']['Workout_intensity'][
+            int(laps_dataframe['Workout_index'][e + 1])]
+        if workout_dic['data']['Workout_target_type'][int(laps_dataframe['Workout_index'][e + 1])] == 'heart_rate':
+            if 'Workout_HR_min' not in records_dataframe.keys():
                 records_dataframe['Workout_HR_min'] = np.nan
                 records_dataframe['Workout_HR_max'] = np.nan
             records_dataframe.loc[filt, 'Workout_HR_min'] = workout_dic['data']['Workout_target_low'][
-                int(laps_dataframe['Workout_index'][e+1])]
+                int(laps_dataframe['Workout_index'][e + 1])]
             records_dataframe.loc[filt, 'Workout_HR_max'] = workout_dic['data']['Workout_target_high'][
-                int(laps_dataframe['Workout_index'][e+1])]
-        if workout_dic['data']['Workout_target_type'][int(laps_dataframe['Workout_index'][e+1])]=='speed':
-            if not 'Workout_speed_min' in records_dataframe.keys():
+                int(laps_dataframe['Workout_index'][e + 1])]
+        if workout_dic['data']['Workout_target_type'][int(laps_dataframe['Workout_index'][e + 1])] == 'speed':
+            if 'Workout_speed_min' not in records_dataframe.keys():
                 records_dataframe['Workout_speed_min'] = np.nan
                 records_dataframe['Workout_speed_max'] = np.nan
             records_dataframe.loc[filt, 'Workout_speed_min'] = workout_dic['data']['Workout_target_low'][
-                int(laps_dataframe['Workout_index'][e+1])]
+                int(laps_dataframe['Workout_index'][e + 1])]
             records_dataframe.loc[filt, 'Workout_speed_max'] = workout_dic['data']['Workout_target_high'][
-                int(laps_dataframe['Workout_index'][e+1])]
+                int(laps_dataframe['Workout_index'][e + 1])]
 
-laps_dataframe.loc[len(laps_dataframe.index),["Átlagos pulzusszám"]]=records_dataframe["Heartrate"].mean()
+laps_dataframe.loc[len(laps_dataframe.index), ["Átlagos pulzusszám"]] = records_dataframe["Heartrate"].mean()
 if 'Workout_HR_min' in records_dataframe.keys():
-    temp_filt = ((records_dataframe['Heartrate'] >= records_dataframe['Workout_HR_min']) & (records_dataframe['Heartrate'] <= records_dataframe['Workout_HR_max']))
-    workout_dic['HR percent']=records_dataframe.loc[temp_filt,'Heartrate'].count()/sum(records_dataframe['Workout_HR_min']>0)
+    temp_filt = ((records_dataframe['Heartrate'] >= records_dataframe['Workout_HR_min']) & (
+            records_dataframe['Heartrate'] <= records_dataframe['Workout_HR_max']))
+    workout_dic['HR percent'] = records_dataframe.loc[temp_filt, 'Heartrate'].count() / sum(
+        records_dataframe['Workout_HR_min'] > 0)
 if 'Workout_speed_min' in records_dataframe.keys():
-    temp_filt = ((records_dataframe['Speed'] >= records_dataframe['Workout_speed_min']) & (records_dataframe['Speed'] <= records_dataframe['Workout_speed_max']))
-    workout_dic['Speed percent']=records_dataframe.loc[temp_filt,'Speed'].count()/sum(records_dataframe['Workout_speed_min']>0)
+    temp_filt = ((records_dataframe['Speed'] >= records_dataframe['Workout_speed_min']) & (
+            records_dataframe['Speed'] <= records_dataframe['Workout_speed_max']))
+    workout_dic['Speed percent'] = records_dataframe.loc[temp_filt, 'Speed'].count() / sum(
+        records_dataframe['Workout_speed_min'] > 0)
 
 
 def format_timedelta(td):
@@ -89,25 +95,30 @@ def format_timedelta(td):
     else:
         return '{:02d}:{:02d}'.format(minutes, seconds)
 
-laps_dataframe['Kör idő']=laps_dataframe.apply(lambda x: format_timedelta(x["Kör idő"]), axis=1)
+
+laps_dataframe['Kör idő'] = laps_dataframe.apply(lambda x: format_timedelta(x["Kör idő"]), axis=1)
 # for e in range(len(lap_total_elapsed_time)):
 #     lap_total_elapsed_time[e]=format_timedelta(lap_total_elapsed_time[e])
 
-laps_dataframe['Összesített idő']=laps_dataframe.apply(lambda x: format_timedelta(x["Összesített idő"]), axis=1)
+laps_dataframe['Összesített idő'] = laps_dataframe.apply(lambda x: format_timedelta(x["Összesített idő"]), axis=1)
 # for e in range(len(lap_sum_time)):
 #     lap_sum_time[e]=format_timedelta(lap_sum_time[e])
 
-laps_dataframe['Kör vége']=laps_dataframe['Kör vége'].dt.strftime("%H:%M:%S")
+laps_dataframe['Kör vége'] = laps_dataframe['Kör vége'].dt.strftime("%H:%M:%S")
 # for e in range(len(lap_time_stamps)):
 #     lap_time_stamps[e]=lap_time_stamps[e].strftime("%H:%M:%S")
 
-laps_dataframe['Kör kezdő idő']=laps_dataframe['Kör kezdő idő'].dt.strftime("%H:%M:%S")
+laps_dataframe['Kör kezdő idő'] = laps_dataframe['Kör kezdő idő'].dt.strftime("%H:%M:%S")
+
+
 # for e in range(len(lap_start_time)):
 #     lap_start_time[e]=lap_start_time[e].strftime("%H:%M:%S")
 
+
 def format_speed(speed):
     lap_minute, lap_second = divmod(1000 / (speed * 60), 1)
-    return '{: 02d}:{: 02d}'.format(int(lap_minute), int(lap_second*60))
+    return '{: 02d}:{: 02d}'.format(int(lap_minute), int(lap_second * 60))
+
 
 if laps_dataframe['Sport'][1] == 'running':
     laps_dataframe['Átlagos tempó'] = laps_dataframe.apply(lambda x: format_speed(x["Átlagos tempó"]), axis=1)
@@ -125,15 +136,15 @@ if laps_dataframe['Sport'][1] == 'running':
 #        speed[e]='{:02d}:{:02d}'.format(int(lap_minute), int(lap_second*60))
 
 if laps_dataframe['Sport'][1] == 'cycling':
-    laps_dataframe['Átlagos sebesség'] = laps_dataframe['Átlagos sebesség']*3.6
+    laps_dataframe['Átlagos sebesség'] = laps_dataframe['Átlagos sebesség'] * 3.6
     # for e in range(len(lap_average_speed)):
     #     lap_average_speed[e]=lap_average_speed[e]*3.6
 
-    laps_dataframe['Max. sebesség'] = laps_dataframe['Max. sebesség']*3.6
+    laps_dataframe['Max. sebesség'] = laps_dataframe['Max. sebesség'] * 3.6
     # for e in range(len(lap_max_speed)):
     #     lap_max_speed[e]=lap_max_speed[e]*3.6
 
-    records_dataframe['Speed'] = records_dataframe['Speed']*3.6
+    records_dataframe['Speed'] = records_dataframe['Speed'] * 3.6
     # for e in range(len(speed)):
     #     speed[e]=speed[e]*3.6
 
@@ -142,9 +153,8 @@ if laps_dataframe['Sport'][1] == 'cycling':
 #     speed[e]='{:02d}:{:02d}'.format(int(lap_minute), int(lap_second*60))
 
 
-
-#display(df)
-#print(tabulate(df, headers="keys", tablefmt="tsv"))
+# display(df)
+# print(tabulate(df, headers="keys", tablefmt="tsv"))
 
 text = """
 Hello, Friend.
@@ -179,23 +189,24 @@ html = """
 </body></html>
 """
 text = text.format(table=tabulate(laps_dataframe, headers="keys", tablefmt="grid")
-                   ,WorkoutName=workout_dic['Workout_Name']
-                   ,HRPercent="{0:.2%}".format(workout_dic['HR percent'])
-                   ,SpeedPercent="{0:.2%}".format(workout_dic['Speed percent']))
+                   , WorkoutName=workout_dic['Workout_Name']
+                   , HRPercent="{0:.2%}".format(workout_dic['HR percent'])
+                   , SpeedPercent="{0:.2%}".format(workout_dic['Speed percent']))
 html = html.format(table=tabulate(laps_dataframe, headers="keys", tablefmt="html")
-                   ,WorkoutName=workout_dic['Workout_Name']
-                   ,HRPercent="{0:.2%}".format(workout_dic['HR percent'])
-                   ,SpeedPercent="{0:.2%}".format(workout_dic['Speed percent']))
+                   , WorkoutName=workout_dic['Workout_Name']
+                   , HRPercent="{0:.2%}".format(workout_dic['HR percent'])
+                   , SpeedPercent="{0:.2%}".format(workout_dic['Speed percent']))
 
-f = open(filename_prefix+'_data.html', 'w')
+f = open(filename_prefix + '_data.html', 'w')
 f.write(html)
 f.close()
 
-f = open(filename_prefix+'_data.txt', 'w')
+f = open(filename_prefix + '_data.txt', 'w')
 f.write(text)
 f.close()
 
-def plotter_dict (first, second=None, third=None):
+
+def plotter_dict(first, second=None, third=None):
     x = []
 
     def time_ticks(s, pos):
@@ -204,7 +215,7 @@ def plotter_dict (first, second=None, third=None):
 
     fig, ax1 = plt.subplots(figsize=(15, 5.2))
     ax1.set_xlabel('Seconds')
-    xtick_formatter = mpl.ticker.FuncFormatter(time_ticks)
+    xtick_formatter = ticker.FuncFormatter(time_ticks)
     ax1.xaxis.set_major_formatter(xtick_formatter)
     ax1.grid(True)
     for i in range(len(first['data'])):
@@ -239,48 +250,50 @@ def plotter_dict (first, second=None, third=None):
     plt.savefig(filename_prefix + filename_suffix + '.png')
 
 
-breath_dict = {'label':'Légzésszám','plot_color':'#B0E1F7','suffix':'_breath','data':records_dataframe['Breath']}
-heart_rate_dict = {'label':'Pulzusszám','plot_color':'#ff0035','suffix':'_HR','data':records_dataframe['Heartrate']}
-speed_dict = {'label':'Sebesség','plot_color':'#05C4EB','suffix':'_speed','data':records_dataframe['Speed']}
-gear_ratio_dict = {'label':'Gear Ratio','plot_color':'#F38D18','suffix':'_gear','data':records_dataframe['GearRatio']}
-altitude_dict = {'label':'Magasság','plot_color':'#57D25F','suffix':'_alt','data':records_dataframe['Altitude']}
+breath_dict = {'label': 'Légzésszám', 'plot_color': '#B0E1F7', 'suffix': '_breath', 'data': records_dataframe['Breath']}
+heart_rate_dict = {'label': 'Pulzusszám', 'plot_color': '#ff0035', 'suffix': '_HR',
+                   'data': records_dataframe['Heartrate']}
+speed_dict = {'label': 'Sebesség', 'plot_color': '#05C4EB', 'suffix': '_speed', 'data': records_dataframe['Speed']}
+gear_ratio_dict = {'label': 'Gear Ratio', 'plot_color': '#F38D18', 'suffix': '_gear',
+                   'data': records_dataframe['GearRatio']}
+altitude_dict = {'label': 'Magasság', 'plot_color': '#57D25F', 'suffix': '_alt', 'data': records_dataframe['Altitude']}
 if laps_dataframe['Sport'][1] == 'cycling':
     power_dict = {'label': 'Power átlag 3sec', 'plot_color': '#FF6AE6', 'suffix': '_power',
-                    'data': records_dataframe['Power_smooth_3_FFT']}
+                  'data': records_dataframe['Power_smooth_3_FFT']}
     cadence_dict = {'label': 'Kerékütem', 'plot_color': '#FFB70E', 'suffix': '_cadence',
                     'data': records_dataframe['Cadence']}
-else: #if lap_sport[0] == 'running':
+else:  # if lap_sport[0] == 'running':
     power_dict = {'label': 'Power', 'plot_color': '#FF6AE6', 'suffix': '_power',
                   'data': records_dataframe['Power']}
-    cadence_dict = {'label':'Pedálütem','plot_color':'#FFB70E','suffix':'_cadence',
-                    'data':records_dataframe['Cadence']}
+    cadence_dict = {'label': 'Pedálütem', 'plot_color': '#FFB70E', 'suffix': '_cadence',
+                    'data': records_dataframe['Cadence']}
 if 'Workout_HR_min' in records_dataframe.keys():
     workout_heart_rate_min_dict = {'label': 'Pulzusszám cél min', 'plot_color': '#FF00E6', 'suffix': '_WKT_HR_min',
                                    'data': records_dataframe['Workout_HR_min']}
     workout_heart_rate_max_dict = {'label': 'Pulzusszám cél max', 'plot_color': '#DF04C9', 'suffix': '_WKT_HR_max',
                                    'data': records_dataframe['Workout_HR_max']}
-    plotter_dict(heart_rate_dict,workout_heart_rate_min_dict,workout_heart_rate_max_dict)
+    plotter_dict(heart_rate_dict, workout_heart_rate_min_dict, workout_heart_rate_max_dict)
 if 'Workout_speed_min' in records_dataframe.keys():
     workout_speed_min_dict = {'label': 'Sebesség cél min', 'plot_color': '#0590EC', 'suffix': '_WKT_speed_min',
-                                   'data': records_dataframe['Workout_speed_min']}
+                              'data': records_dataframe['Workout_speed_min']}
     workout_speed_max_dict = {'label': 'Sebesség cél max', 'plot_color': '#0569EC', 'suffix': '_WKT_speed_max',
-                                   'data': records_dataframe['Workout_speed_max']}
-    plotter_dict(speed_dict,workout_speed_min_dict,workout_speed_max_dict)
+                              'data': records_dataframe['Workout_speed_max']}
+    plotter_dict(speed_dict, workout_speed_min_dict, workout_speed_max_dict)
 
-plotter_dict (speed_dict,heart_rate_dict)
-if isinstance(breath_dict['data'].iloc[-1], float):
-    plotter_dict (breath_dict,heart_rate_dict,speed_dict)
-    plotter_dict (power_dict,breath_dict,heart_rate_dict)
-    plotter_dict (breath_dict,heart_rate_dict)
-plotter_dict (cadence_dict,heart_rate_dict)
-plotter_dict (heart_rate_dict)
-if isinstance(altitude_dict['data'].iloc[-1],float):
-    if isinstance(gear_ratio_dict['data'].iloc[-1],float):
-        plotter_dict(cadence_dict,gear_ratio_dict,altitude_dict)
+plotter_dict(speed_dict, heart_rate_dict)
+if not np.isnan(breath_dict['data'].iloc[-1]):
+    plotter_dict(breath_dict, heart_rate_dict, speed_dict)
+    plotter_dict(power_dict, breath_dict, heart_rate_dict)
+    plotter_dict(breath_dict, heart_rate_dict)
+plotter_dict(cadence_dict, heart_rate_dict)
+plotter_dict(heart_rate_dict)
+if not np.isnan(altitude_dict['data'].iloc[-1]):
+    if not np.isnan(gear_ratio_dict['data'].iloc[-1]):
+        plotter_dict(cadence_dict, gear_ratio_dict, altitude_dict)
     plotter_dict(cadence_dict, speed_dict, altitude_dict)
 
-#records_dataframe = pd.DataFrame()
-#start_time = 0
+# records_dataframe = pd.DataFrame()
+# start_time = 0
 # power = []
 # #power_smooth_10 = []
 # power_smooth_3_FFT = []
@@ -294,7 +307,7 @@ if isinstance(altitude_dict['data'].iloc[-1],float):
 # altitude = []
 # gear_ratio = []
 # #temp_avarage = 0
-#x = []
+# x = []
 
 #
 # lap_start_time = []

@@ -1,14 +1,14 @@
-from fitparse import FitFile
 #import matplotlib as mpl
 #import matplotlib.pyplot as plt
 #from matplotlib.dates import AutoDateFormatter, AutoDateLocator
-import numpy as np
 #from statistics import mean
+#from IPython.display import display, HTML
+#from tabulate import tabulate
 from scipy.signal import savgol_filter
 import datetime
-#from tabulate import tabulate
 import pandas as pd
-#from IPython.display import display, HTML
+from fitparse import FitFile
+import numpy as np
 
 def read_fit_file_records(filename):
     power = []
@@ -51,9 +51,9 @@ def read_fit_file_records(filename):
                 altitude.append(data.value)
             if data.name == 'currGearRatio':
                 gear_ratio.append(data.value)
-        if len(breath) < len(timestamp) :
+        if len(breath) < len(timestamp):
             breath.append(np.nan)
-        if len(speed) < len(timestamp) :
+        if len(speed) < len(timestamp):
             speed.append(np.nan)
         if len(power) < len(timestamp):
             power.append(np.nan)
@@ -77,9 +77,9 @@ def read_fit_file_records(filename):
     print('speed', len(speed))
     print('cadence', len(cadence))
 
-    records_df = pd.DataFrame({"Rec_Timestamp":timestamp,"Heartrate":heart_rate,
-                        "Altitude":altitude,"Speed":speed,"Cadence":cadence,"Breath":breath,
-                        "GearRatio":gear_ratio,"Power":power,"Power_smooth_3_FFT":power_smooth_3_fft})
+    records_df = pd.DataFrame({"Rec_Timestamp": timestamp, "Heartrate": heart_rate,
+                        "Altitude": altitude, "Speed": speed, "Cadence": cadence, "Breath": breath,
+                        "GearRatio": gear_ratio, "Power": power, "Power_smooth_3_FFT": power_smooth_3_fft})
 
 
     return records_df
@@ -242,7 +242,7 @@ def read_fit_file_workout(filename):
         # Records can contain multiple pieces of data (ex: timestamp, latitude, longitude, etc)
         for data in workout_step:
 #            print(data.name, data.value)
-            if data.name == 'duration_time' or data.name == 'duration_distance'or data.name == 'duration_step':
+            if data.name == 'duration_time' or data.name == 'duration_distance' or data.name == 'duration_step':
                 workout_step_duration.append(data.value)
             if data.name == 'custom_target_heart_rate_low' or data.name == 'custom_target_speed_low':
                 workout_step_target_low.append(data.value)
@@ -252,7 +252,7 @@ def read_fit_file_workout(filename):
                 workout_step_message_index.append(data.value)
             if data.name == 'duration_type':
                 workout_step_duration_type.append(data.value)
-            if data.name == 'target_value' or data.name == 'repeat_steps'or data.name == 'target_speed_zone'\
+            if data.name == 'target_value' or data.name == 'repeat_steps' or data.name == 'target_speed_zone'\
                     or data.name == 'target_hr_zone':
                 workout_step_target_value.append(data.value)
             if data.name == 'target_type':
@@ -276,10 +276,10 @@ def read_fit_file_workout(filename):
     for i in range(len(workout_step_message_index)):
         if workout_step_message_index[i] != i:
             print("Error")
-    workout_df = pd.DataFrame({'Workout_Duration':workout_step_duration
-                        ,'Workout_duration_type':workout_step_duration_type,'Workout_target_type':workout_step_target_type
-                        ,'Workout_target_value':workout_step_target_value,'Workout_intensity':workout_step_intensity,'Workout_target_low':workout_step_target_low
-                        ,'Workout_target_high':workout_step_target_high})
+    workout_df = pd.DataFrame({'Workout_Duration': workout_step_duration
+                        ,'Workout_duration_type': workout_step_duration_type, 'Workout_target_type': workout_step_target_type
+                        ,'Workout_target_value': workout_step_target_value, 'Workout_intensity': workout_step_intensity, 'Workout_target_low': workout_step_target_low
+                        ,'Workout_target_high': workout_step_target_high})
 #    print(workout_name)
 #    print(tabulate(workout_df, headers="keys", tablefmt="tsv"))
-    return {'Workout_Name':workout_name, 'Workout_sport':workout_sport, 'HR percent':0.0,'Speed percent':0.0 ,'data':workout_df}
+    return {'Workout_Name': workout_name, 'Workout_sport': workout_sport, 'HR percent': 0.0, 'Speed percent': 0.0, 'data': workout_df}
