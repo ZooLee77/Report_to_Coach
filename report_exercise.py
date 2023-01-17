@@ -13,8 +13,14 @@ from tabulate import tabulate
 # import pandas as pd
 import read_fit_file_func as readfit
 import get_cloud_data as getc
+import json
+
 
 api = None
+feel_map ={0: "Nagyon gyenge", 25: "Gyenge", 50: "Normál", 75: "Erős", 100: "Nagyon erős"}
+rpe_map ={10: "1/10 - Nagyon könnyű", 20: "2/10 - Könnyű", 30: "3/10 - Mérsékelt", 40: "4/10 - Kissé nehéz",
+          50: "5/10- Nehéz", 60: "6/10- Nehéz", 70: "7/10- Nagyon nehéz", 80: "8/10- Nagyon nehéz", 90: "9/10- Rendkívül nehéz"
+          , 100: "Maximális"}
 
 for i in range(10):
     # Init API
@@ -24,12 +30,24 @@ for i in range(10):
         break
 
 activity_id = last_activity["activityId"]
-print(last_activity)
+#print(json.dumps(last_activity, indent=4))
 fit_file_name = getc.download_activity(api, activity_id)
 
-fit_file_list = ['10153960586_ACTIVITY.fit', '10168131101_ACTIVITY.fit', '10176445328_ACTIVITY.fit',
-                 '10190995780_ACTIVITY.fit', '10197069218_ACTIVITY.fit', '10207850540_ACTIVITY.fit',
-                 '10217521774_ACTIVITY.fit', '10225157717_ACTIVITY.fit', '10241888920_ACTIVITY.fit']
+evaluation = api.get_activity_evaluation(activity_id)
+if "directWorkoutFeel" in evaluation['summaryDTO'].keys():
+    feel = feel_map[evaluation['summaryDTO']['directWorkoutFeel']]
+    rpe = rpe_map[evaluation['summaryDTO']['directWorkoutRpe']]
+    relative_effort = "Hogy érzi magát? " + feel + " Észlelt erőfeszítés: " + rpe
+
+weather = api.get_activity_weather(activity_id)
+if isinstance(weather['temp'], (int, float)):
+    text_weather = "Hömérséklet: " + "{0:.4}".format((weather['temp'] - 32) / 1.8) + "(C) Hőérzet: " + "{0:.4}".format(
+        (150 - 32) / 1.8) + "(C) Páratartalom: " + str(
+        weather['relativeHumidity']) + "% Szélsebesség: " + "{0:.4}".format(weather['windSpeed'] * 1.852) + " kmp"
+
+# fit_file_list = ['10153960586_ACTIVITY.fit', '10168131101_ACTIVITY.fit', '10176445328_ACTIVITY.fit',
+#                  '10190995780_ACTIVITY.fit', '10197069218_ACTIVITY.fit', '10207850540_ACTIVITY.fit',
+#                  '10217521774_ACTIVITY.fit', '10225157717_ACTIVITY.fit', '10241888920_ACTIVITY.fit']
 
 records_dataframe = readfit.read_fit_file_records(fit_file_name)
 laps_dataframe = readfit.read_fit_file_laps(fit_file_name)
@@ -163,6 +181,8 @@ Here is your data:
 Workout name is {WorkoutName}
 Workout Heart Rate in the target zone: {HRPercent}
 Workout Speed in the target zone: {SpeedPercent}
+{Relative_effort}
+{Weather}
 
 {table}
 
@@ -183,6 +203,9 @@ html = """
 <p>Workout name is {WorkoutName}</p>
 <p>Workout Heart Rate in the target zone: {HRPercent}</p>
 <p>Workout Speed in the target zone: {SpeedPercent}</p>
+<p>{Relative_effort}</p>
+<p>{Weather}</p>
+
 {table}
 <p>Regards,</p>
 <p>Me</p>
@@ -191,11 +214,13 @@ html = """
 text = text.format(table=tabulate(laps_dataframe, headers="keys", tablefmt="grid")
                    , WorkoutName=workout_dic['Workout_Name']
                    , HRPercent="{0:.2%}".format(workout_dic['HR percent'])
-                   , SpeedPercent="{0:.2%}".format(workout_dic['Speed percent']))
+                   , SpeedPercent="{0:.2%}".format(workout_dic['Speed percent'])
+                   , Relative_effort=relative_effort, Weather=text_weather)
 html = html.format(table=tabulate(laps_dataframe, headers="keys", tablefmt="html")
                    , WorkoutName=workout_dic['Workout_Name']
                    , HRPercent="{0:.2%}".format(workout_dic['HR percent'])
-                   , SpeedPercent="{0:.2%}".format(workout_dic['Speed percent']))
+                   , SpeedPercent="{0:.2%}".format(workout_dic['Speed percent'])
+                   , Relative_effort=relative_effort, Weather=text_weather)
 
 f = open(filename_prefix + '_data.html', 'w')
 f.write(html)
