@@ -17,6 +17,13 @@ import json
 
 
 api = None
+relative_effort = ''
+text_weather = ''
+today = datetime.date.today()
+startdate = today - datetime.timedelta(days=7)
+x = []
+weight = []
+
 feel_map ={0: "Nagyon gyenge", 25: "Gyenge", 50: "Normál", 75: "Erős", 100: "Nagyon erős"}
 rpe_map ={10: "1/10 - Nagyon könnyű", 20: "2/10 - Könnyű", 30: "3/10 - Mérsékelt", 40: "4/10 - Kissé nehéz",
           50: "5/10- Nehéz", 60: "6/10- Nehéz", 70: "7/10- Nagyon nehéz", 80: "8/10- Nagyon nehéz", 90: "9/10- Rendkívül nehéz"
@@ -44,6 +51,10 @@ if isinstance(weather['temp'], (int, float)):
     text_weather = "Hömérséklet: " + "{0:.4}".format((weather['temp'] - 32) / 1.8) + "(C) Hőérzet: " + "{0:.4}".format(
         (150 - 32) / 1.8) + "(C) Páratartalom: " + str(
         weather['relativeHumidity']) + "% Szélsebesség: " + "{0:.4}".format(weather['windSpeed'] * 1.852) + " kmp"
+
+for data in api.get_body_composition(startdate.isoformat(), today.isoformat())["dateWeightList"]:
+    x.append(datetime.datetime.fromtimestamp(data['date'] / 1000))
+    weight.append(data['weight'] / 1000)
 
 # fit_file_list = ['10153960586_ACTIVITY.fit', '10168131101_ACTIVITY.fit', '10176445328_ACTIVITY.fit',
 #                  '10190995780_ACTIVITY.fit', '10197069218_ACTIVITY.fit', '10207850540_ACTIVITY.fit',
@@ -229,6 +240,13 @@ f.close()
 f = open(filename_prefix + '_data.txt', 'w')
 f.write(text)
 f.close()
+
+fig, ax = plt.subplots(figsize=(15, 5.2))
+ax.set_xlabel('Súly')
+ax.set_ylabel('Dátum')
+ax.plot(x, weight, label='Súly')
+plt.legend()
+plt.savefig(filename_prefix + '_weight.png')
 
 
 def plotter_dict(first, second=None, third=None):
