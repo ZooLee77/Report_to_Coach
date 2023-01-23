@@ -37,6 +37,7 @@ for i in range(10):
         break
 
 activity_id = last_activity["activityId"]
+#activity_id = "10341956145"
 #print(json.dumps(last_activity, indent=4))
 fit_file_name = getc.download_activity(api, activity_id)
 
