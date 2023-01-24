@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import datetime
 from tabulate import tabulate
-# import pandas as pd
+import pandas as pd
 import read_fit_file_func as readfit
 import get_cloud_data as getc
 #import json
@@ -19,6 +19,7 @@ api = None
 relative_effort = ''
 text_weather = ''
 sleep_text = ''
+sleep_list = []
 today = datetime.date.today()
 #startdate = today - datetime.timedelta(days=7)
 x = []
@@ -105,8 +106,8 @@ def save_sleep(api, date):
     if not sleep['dailySleepDTO']['id']:
         return ""
     for data in sleep["sleepLevels"]:
-        x.append(datetime.datetime.fromisoformat(data['startGMT']))
-        x.append(datetime.datetime.fromisoformat(data['endGMT']) - datetime.timedelta(seconds=1))
+        x.append(datetime.datetime.strptime(data['startGMT'], "%Y-%m-%dT%H:%M:%S.%f"))
+        x.append(datetime.datetime.strptime(data['endGMT'], "%Y-%m-%dT%H:%M:%S.%f") - datetime.timedelta(seconds=1))
         activityszint.append(data['activityLevel'])
         activityszint.append(data['activityLevel'])
     eber = np.array([0.9] * len(activityszint))  # 66B2FF
@@ -136,36 +137,39 @@ def save_sleep(api, date):
     ax.set_yticks([0, 1, 2, 3])
     plt.yticks(ticks=[0, 1, 2, 3], labels=["Mély", "Éber", "REM", "Ébrenlét"], fontsize=12)
     plt.savefig(filename_prefix + '_sleep.png')
-    sleep_text = ""
-    sleep_text += "Alvási adatok: " + str(sleep['dailySleepDTO']['calendarDate']) + "\n"
-    sleep_text += "Alvási eredmény " + str(sleep['dailySleepDTO']['sleepScores']["overall"]['value']) + " /100\n"
-    sleep_text += "Az alvás egésze " + sleep['dailySleepDTO']['sleepScores']["overall"]['qualifierKey'] + "\n"
-    sleep_text += "Alvásról visszajelzés " + sleep['dailySleepDTO']['sleepScoreFeedback'] + "\n"
-    sleep_text += "Teljes hossz " + format_timedelta(
-        datetime.timedelta(seconds=sleep['dailySleepDTO']['sleepTimeSeconds']))
-    sleep_text += " " + sleep['dailySleepDTO']['sleepScores']["totalDuration"]['qualifierKey'] + "\n"
-    sleep_text += "Alvási stress " + str(sleep['dailySleepDTO']['avgSleepStress'])
-    sleep_text += " " + sleep['dailySleepDTO']['sleepScores']["stress"]['qualifierKey'] + "\n"
-    sleep_text += "Mély alvás " + format_timedelta(
-        datetime.timedelta(seconds=sleep['dailySleepDTO']['deepSleepSeconds']))
-    sleep_text += " " + sleep['dailySleepDTO']['sleepScores']["deepPercentage"]['qualifierKey'] + "\n"
-    sleep_text += "Könnyű alvás " + format_timedelta(
-        datetime.timedelta(seconds=sleep['dailySleepDTO']['lightSleepSeconds']))
-    sleep_text += " " + sleep['dailySleepDTO']['sleepScores']["lightPercentage"]['qualifierKey'] + "\n"
-    sleep_text += "REM " + format_timedelta(datetime.timedelta(seconds=sleep['dailySleepDTO']['remSleepSeconds']))
-    sleep_text += " " + sleep['dailySleepDTO']['sleepScores']["remPercentage"]['qualifierKey'] + "\n"
-    sleep_text += "Ébrenlét " + format_timedelta(
-        datetime.timedelta(seconds=sleep['dailySleepDTO']['awakeSleepSeconds']))
-    sleep_text += " " + sleep['dailySleepDTO']['sleepScores']["awakeCount"]['qualifierKey'] + "\n"
-    sleep_text += "(**********************) " + "\n"
-    return sleep_text
+    sleep_data = [["Alvási adatok: ", "Alvási eredmény ", "Az alvás egésze ", "Alvásról visszajelzés ", "Teljes hossz ",
+                   "Alvási stress ", "Mély alvás ", "Könnyű alvás ", "REM ", "Ébrenlét "],
+                  [sleep['dailySleepDTO']['calendarDate'],
+                   str(sleep['dailySleepDTO']['sleepScores']["overall"]['value']) + " /100", '', '',
+                   format_timedelta(datetime.timedelta(seconds=sleep['dailySleepDTO']['sleepTimeSeconds'])),
+                   sleep['dailySleepDTO']['avgSleepStress'],
+                   format_timedelta(datetime.timedelta(seconds=sleep['dailySleepDTO']['deepSleepSeconds'])),
+                   format_timedelta(datetime.timedelta(seconds=sleep['dailySleepDTO']['lightSleepSeconds'])),
+                   format_timedelta(datetime.timedelta(seconds=sleep['dailySleepDTO']['remSleepSeconds'])),
+                   format_timedelta(datetime.timedelta(seconds=sleep['dailySleepDTO']['awakeSleepSeconds']))],
+                  ['', '', sleep['dailySleepDTO']['sleepScores']["overall"]['qualifierKey'],
+                   sleep['dailySleepDTO']['sleepScoreFeedback'],
+                   sleep['dailySleepDTO']['sleepScores']["totalDuration"]['qualifierKey'],
+                   sleep['dailySleepDTO']['sleepScores']["stress"]['qualifierKey'],
+                   sleep['dailySleepDTO']['sleepScores']["deepPercentage"]['qualifierKey'],
+                   sleep['dailySleepDTO']['sleepScores']["lightPercentage"]['qualifierKey'],
+                   sleep['dailySleepDTO']['sleepScores']["remPercentage"]['qualifierKey'],
+                   sleep['dailySleepDTO']['sleepScores']["awakeCount"]['qualifierKey']]]
+    sleep_data_df = pd.DataFrame(sleep_data)
+    return sleep_data_df.transpose()
 
 
 save_weight(api, today)
 
-current_date = datetime.datetime.fromisoformat(last_activity['startTimeGMT']).date()
+current_date = datetime.datetime.strptime(last_activity['startTimeGMT'], "%Y-%m-%d %H:%M:%S").date()
+if today == current_date:
+    activities = api.get_activities_by_date((today - datetime.timedelta(days=8)).isoformat(), (today - datetime.timedelta(days=1)).isoformat())
+    for activity in activities:
+        if activity["activityType"]["typeKey"] == "running" or activity["activityType"]["typeKey"] == "cycling":
+            current_date = datetime.datetime.strptime(activity['startTimeGMT'], "%Y-%m-%d %H:%M:%S").date()
+            break
 while current_date <= today:
-    sleep_text += save_sleep(api, current_date)
+    sleep_list.append(save_sleep(api, current_date))
     current_date += datetime.timedelta(days=1)
 
 laps_dataframe.insert(laps_dataframe.columns.get_loc("Max. pulzus") + 1, 'Min. pulzus', np.nan)

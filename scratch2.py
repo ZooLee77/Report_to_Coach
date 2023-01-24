@@ -11,6 +11,7 @@ import read_fit_file_func as readfit
 import get_cloud_data as getc
 import json
 import datetime
+from tabulate import tabulate
 
 def format_timedelta(td):
     minutes, seconds = divmod(td.seconds + td.days * 86400, 60)
@@ -34,6 +35,8 @@ api = None
 today = datetime.date.today()
 startdate = today - datetime.timedelta(days=7)
 filename_prefix ="2023_01_19"
+sleep_text = ''
+sleep_list = []
 
 # x = []
 # activityszint = []
@@ -98,3 +101,27 @@ sleep_text += "Ébrenlét " + format_timedelta(datetime.timedelta(seconds=sleep[
 sleep_text += " " + sleep['dailySleepDTO']['sleepScores']["awakeCount"]['qualifierKey'] + "\n"
 sleep_text += "(**********************) " + "\n"
 print(sleep_text)
+
+sleep_data = [["Alvási adatok: ", "Alvási eredmény ", "Az alvás egésze ", "Alvásról visszajelzés ", "Teljes hossz ", "Alvási stress ", "Mély alvás ", "Könnyű alvás ", "REM ", "Ébrenlét "],
+             [sleep['dailySleepDTO']['calendarDate'], str(sleep['dailySleepDTO']['sleepScores']["overall"]['value']) + " /100", '', '', format_timedelta(datetime.timedelta(seconds=sleep['dailySleepDTO']['sleepTimeSeconds'])),
+             sleep['dailySleepDTO']['avgSleepStress'], format_timedelta(datetime.timedelta(seconds=sleep['dailySleepDTO']['deepSleepSeconds'])), format_timedelta(datetime.timedelta(seconds=sleep['dailySleepDTO']['lightSleepSeconds'])),
+             format_timedelta(datetime.timedelta(seconds=sleep['dailySleepDTO']['remSleepSeconds'])), format_timedelta(datetime.timedelta(seconds=sleep['dailySleepDTO']['awakeSleepSeconds']))],
+            ['', '', sleep['dailySleepDTO']['sleepScores']["overall"]['qualifierKey'], sleep['dailySleepDTO']['sleepScoreFeedback'], sleep['dailySleepDTO']['sleepScores']["totalDuration"]['qualifierKey'],
+             sleep['dailySleepDTO']['sleepScores']["stress"]['qualifierKey'], sleep['dailySleepDTO']['sleepScores']["deepPercentage"]['qualifierKey'], sleep['dailySleepDTO']['sleepScores']["lightPercentage"]['qualifierKey'],
+             sleep['dailySleepDTO']['sleepScores']["remPercentage"]['qualifierKey'], sleep['dailySleepDTO']['sleepScores']["awakeCount"]['qualifierKey']]]
+sleep_data_df = pd.DataFrame(sleep_data)
+print(tabulate(sleep_data_df.transpose(), tablefmt="grid"))
+
+current_date = datetime.datetime.strptime(last_activity['startTimeGMT'], "%Y-%m-%d %H:%M:%S").date()
+if today == current_date:
+    activities = api.get_activities_by_date((today - datetime.timedelta(days=8)).isoformat(), (today - datetime.timedelta(days=1)).isoformat())
+    for activity in activities:
+        if activity["activityType"]["typeKey"] == "running" or activity["activityType"]["typeKey"] == "cycling":
+            current_date = datetime.datetime.strptime(activity['startTimeGMT'], "%Y-%m-%d %H:%M:%S").date()
+            break
+while current_date <= today:
+    sleep_list.append(save_sleep(api, current_date))
+    current_date += datetime.timedelta(days=1)
+
+for sleeps in sleep_list:
+    sleep_text = tabulate(sleeps, tablefmt="grid")
