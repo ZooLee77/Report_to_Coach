@@ -19,6 +19,7 @@ api = None
 relative_effort = ''
 text_weather = ''
 sleep_text = ''
+sleep_html = ''
 sleep_list = []
 today = datetime.date.today()
 #startdate = today - datetime.timedelta(days=7)
@@ -159,7 +160,26 @@ def save_sleep(api, date):
     return sleep_data_df.transpose()
 
 
+def save_rhr(api, actualday):
+    x = []
+    rhr_list = []
+    filename_prefix = actualday.strftime("%Y_%m_%d")
+    startdate = actualday - datetime.timedelta(days=7)
+    while startdate <= actualday:
+        rhr_date = api.get_rhr_day(startdate.isoformat())
+        x.append(startdate)
+        rhr_list.append(rhr_date['allMetrics']['metricsMap']['WELLNESS_RESTING_HEART_RATE'][0]['value'])
+        startdate += datetime.timedelta(days=1)
+    fig, ax = plt.subplots(figsize=(15, 5.2))
+    ax.set_xlabel('Resting Heart Rate')
+    ax.set_ylabel('Dátum')
+    ax.plot(x, rhr_list, label='Resting Heart Rate')
+    plt.legend()
+    plt.savefig(filename_prefix + '_rhr.png')
+
+
 save_weight(api, today)
+save_rhr(api, today)
 
 current_date = datetime.datetime.strptime(last_activity['startTimeGMT'], "%Y-%m-%d %H:%M:%S").date()
 if today == current_date:
@@ -321,6 +341,10 @@ html = """
 <p>Me</p>
 </body></html>
 """
+
+for sleeps in sleep_list:
+    sleep_text = sleep_text + tabulate(sleeps, tablefmt="grid")
+    sleep_html = sleep_html + tabulate(sleeps, tablefmt="html")
 text = text.format(table=tabulate(laps_dataframe, headers="keys", tablefmt="grid"),
                    WorkoutName=workout_dic['Workout_Name'],
                    HRPercent="{0:.2%}".format(workout_dic['HR percent']),
@@ -330,7 +354,7 @@ html = html.format(table=tabulate(laps_dataframe, headers="keys", tablefmt="html
                    WorkoutName=workout_dic['Workout_Name'],
                    HRPercent="{0:.2%}".format(workout_dic['HR percent']),
                    SpeedPercent="{0:.2%}".format(workout_dic['Speed percent']),
-                   Relative_effort=relative_effort, Weather=text_weather, sleep=sleep_text)
+                   Relative_effort=relative_effort, Weather=text_weather, sleep=sleep_html)
 
 f = open(filename_prefix + '_data.html', 'w')
 f.write(html)
