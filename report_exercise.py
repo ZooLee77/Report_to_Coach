@@ -4,6 +4,7 @@
 # from scipy.signal import savgol_filter
 # from IPython.display import display, HTML
 # from typing import Any
+#import json
 
 from matplotlib import ticker
 import matplotlib.pyplot as plt
@@ -13,7 +14,8 @@ from tabulate import tabulate
 import pandas as pd
 import read_fit_file_func as readfit
 import get_cloud_data as getc
-#import json
+import myfitnesspal
+
 
 api = None
 relative_effort = ''
@@ -25,6 +27,9 @@ today = datetime.date.today()
 #startdate = today - datetime.timedelta(days=7)
 x = []
 weight = []
+meals_text = ''
+meals_html = ''
+meal_list = []
 
 feel_map = {0: "Nagyon gyenge", 25: "Gyenge", 50: "Normál", 75: "Erős", 100: "Nagyon erős"}
 rpe_map = {10: "1/10 - Nagyon könnyű", 20: "2/10 - Könnyű", 30: "3/10 - Mérsékelt", 40: "4/10 - Kissé nehéz",
@@ -177,6 +182,31 @@ def save_rhr(api, actualday):
     plt.legend()
     plt.savefig(filename_prefix + '_rhr.png')
 
+def collect_meals(actualday):
+    client = myfitnesspal.Client()
+    day = client.get_date(actualday)
+
+    meal_name = [actualday, 'Név']
+    meal_quantity = ['', 'Mennyiség']
+    meal_calories = ['', 'Kalória']
+    meal_sum_calories = 0
+
+    for meals in day.meals:
+        meal_name.append(meals.name)
+        meal_quantity.append('')
+        meal_calories.append('')
+        for entries in meals.entries:
+            meal_name.append(entries.name)
+            meal_quantity.append(entries.quantity)
+            meal_calories.append(entries['calories'])
+            meal_sum_calories += float(entries['calories'])
+
+    meal_name.append("Összesen")
+    meal_quantity.append('')
+    meal_calories.append(meal_sum_calories)
+    meal_data_df = pd.DataFrame([meal_name, meal_quantity, meal_calories])
+    return meal_data_df.transpose()
+
 
 save_weight(api, today)
 save_rhr(api, today)
@@ -190,6 +220,7 @@ if today == current_date:
             break
 while current_date <= today:
     sleep_list.append(save_sleep(api, current_date))
+    meal_list.append(collect_meals(current_date))
     current_date += datetime.timedelta(days=1)
 
 laps_dataframe.insert(laps_dataframe.columns.get_loc("Max. pulzus") + 1, 'Min. pulzus', np.nan)
@@ -316,6 +347,7 @@ Workout Speed in the target zone: {SpeedPercent}
 
 {table}
 {sleep}
+{meal}
 Regards,
 
 Me"""
@@ -337,6 +369,7 @@ html = """
 <p>{Weather}</p>
 {table}
 <p>{sleep}</p>
+<p>{meal}</p>
 <p>Regards,</p>
 <p>Me</p>
 </body></html>
@@ -345,16 +378,22 @@ html = """
 for sleeps in sleep_list:
     sleep_text = sleep_text + tabulate(sleeps, tablefmt="grid")
     sleep_html = sleep_html + tabulate(sleeps, tablefmt="html")
+for meals in meal_list:
+    meals_text = meals_text + tabulate(meals, tablefmt="grid")
+    meals_html = meals_html + tabulate(meals, tablefmt="html")
+
 text = text.format(table=tabulate(laps_dataframe, headers="keys", tablefmt="grid"),
                    WorkoutName=workout_dic['Workout_Name'],
                    HRPercent="{0:.2%}".format(workout_dic['HR percent']),
                    SpeedPercent="{0:.2%}".format(workout_dic['Speed percent']),
-                   Relative_effort=relative_effort, Weather=text_weather, sleep=sleep_text)
+                   Relative_effort=relative_effort, Weather=text_weather, sleep=sleep_text,
+                   meal=meals_text)
 html = html.format(table=tabulate(laps_dataframe, headers="keys", tablefmt="html"),
                    WorkoutName=workout_dic['Workout_Name'],
                    HRPercent="{0:.2%}".format(workout_dic['HR percent']),
                    SpeedPercent="{0:.2%}".format(workout_dic['Speed percent']),
-                   Relative_effort=relative_effort, Weather=text_weather, sleep=sleep_html)
+                   Relative_effort=relative_effort, Weather=text_weather, sleep=sleep_html,
+                   meal=meals_html)
 
 f = open(filename_prefix + '_data.html', 'w')
 f.write(html)

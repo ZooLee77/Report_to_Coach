@@ -12,6 +12,7 @@ import get_cloud_data as getc
 import json
 import datetime
 from tabulate import tabulate
+import myfitnesspal
 
 def format_timedelta(td):
     minutes, seconds = divmod(td.seconds + td.days * 86400, 60)
@@ -23,12 +24,12 @@ def format_timedelta(td):
 
 api = None
 
-for i in range(10):
-    # Init API
-    if not api:
-        api, last_activity = getc.get_last_activity()
-    else:
-        break
+# for i in range(10):
+#     # Init API
+#     if not api:
+#         api, last_activity = getc.get_last_activity()
+#     else:
+#         break
 
 
 # activity_id = last_activity["activityId"]
@@ -37,4 +38,29 @@ startdate = today - datetime.timedelta(days=7)
 filename_prefix ="2023_01_19"
 sleep_text = ''
 sleep_list = []
+
+client = myfitnesspal.Client()
+day = client.get_date(today)
+
+meal_name = [today, 'Név']
+meal_quantity = ['', 'Mennyiség']
+meal_calories = ['', 'Kalória']
+meal_sum_calories = 0
+
+for meals in day.meals:
+    meal_name.append(meals.name)
+    meal_quantity.append('')
+    meal_calories.append('')
+    for entries in meals.entries:
+        meal_name.append(entries.name)
+        meal_quantity.append(entries.quantity)
+        meal_calories.append(entries['calories'])
+        meal_sum_calories += float(entries['calories'])
+
+meal_name.append("Összesen")
+meal_quantity.append('')
+meal_calories.append(meal_sum_calories)
+meal_data_df = pd.DataFrame([meal_name, meal_quantity, meal_calories])
+print(meal_data_df.transpose())
+
 
