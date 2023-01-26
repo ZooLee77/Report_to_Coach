@@ -1,7 +1,7 @@
 import datetime
 import json
 import logging
-# import os
+import os
 # import sys
 
 import requests
@@ -22,8 +22,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Load environment variables if defined
-email = "zoltan.fejes@gmail.com"
-password = "Pentek13"
+email = os.getenv("garmin_email")
+password = os.getenv("garmin_password")
 api = None
 
 # Example selections and settings
