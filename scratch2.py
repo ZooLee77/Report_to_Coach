@@ -7,7 +7,7 @@ import pandas as pd
 #import matplotlib as mpl
 #from tabulate import tabulate
 from scipy.signal import savgol_filter
-import read_fit_file_func as readfit
+import read_fit_file as readfit
 import get_cloud_data as getc
 import json
 import datetime

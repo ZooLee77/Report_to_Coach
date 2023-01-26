@@ -12,7 +12,7 @@ import numpy as np
 import datetime
 from tabulate import tabulate
 import pandas as pd
-import read_fit_file_func as readfit
+import read_fit_file as readfit
 import get_cloud_data as getc
 import myfitnesspal
 
