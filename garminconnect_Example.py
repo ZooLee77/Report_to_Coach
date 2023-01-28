@@ -53,6 +53,8 @@ menu_options = {
     "8": f"Get steps data for '{today.isoformat()}'",
     "9": f"Get heart rate data for '{today.isoformat()}'",
     "0": f"Get training readiness data for '{today.isoformat()}'",
+    "-": f"Get daily step data for '{startdate.isoformat()}' to '{today.isoformat()}'",
+    "/": f"Get body battery data for '{startdate.isoformat()}' to '{today.isoformat()}'",
     ".": f"Get training status data for '{today.isoformat()}'",
     "a": f"Get resting heart rate data for {today.isoformat()}'",
     "b": f"Get hydration data for '{today.isoformat()}'",
@@ -76,8 +78,10 @@ menu_options = {
     "u": "Get active goals",
     "v": "Get future goals",
     "w": "Get past goals",
+    "y": "Get all Garmin device alarms",
     "x": f"Get Heart Rate Variability data (HRV) for '{today.isoformat()}'",
-    "G": f"Get Gear'",
+    "z": f"Get progress summary from '{startdate.isoformat()}' to '{today.isoformat()}' for all metrics",
+    "A": "Get gear, the defaults, activity types and statistics",
     "Z": "Logout Garmin Connect portal",
     "q": "Exit",
 }
@@ -222,6 +226,14 @@ def switch(api, i):
                 # Get training readiness data for 'YYYY-MM-DD'
                 display_json(f"api.get_training_readiness('{today.isoformat()}')",
                              api.get_training_readiness(today.isoformat()))
+            elif i == "/":
+                # Get daily body battery data for 'YYYY-MM-DD' to 'YYYY-MM-DD'
+                display_json(f"api.get_body_battery('{startdate.isoformat()}, {today.isoformat()}')",
+                             api.get_body_battery(startdate.isoformat(), today.isoformat()))
+            elif i == "-":
+                # Get daily step data for 'YYYY-MM-DD'
+                display_json(f"api.get_daily_steps('{startdate.isoformat()}, {today.isoformat()}')",
+                             api.get_daily_steps(startdate.isoformat(), today.isoformat()))
             elif i == ".":
                 # Get training status data for 'YYYY-MM-DD'
                 display_json(f"api.get_training_status('{today.isoformat()}')",
@@ -367,6 +379,11 @@ def switch(api, i):
                 display_json(f"api.get_activity_evaluation({first_activity_id})",
                              api.get_activity_evaluation(first_activity_id))
 
+                # Get exercise sets in case the activity is a strength_training
+                if activities[0]["activityType"]["typeKey"] == "strength_training":
+                    display_json(f"api.get_activity_exercise_sets({first_activity_id})",
+                                 api.get_activity_exercise_sets(first_activity_id))
+
             elif i == "s":
                 # Upload activity from file
                 display_json(f"api.upload_activity({activityfile})", api.upload_activity(activityfile))
@@ -402,12 +419,29 @@ def switch(api, i):
                 goals = api.get_goals("past")
                 display_json("api.get_goals(\"past\")", goals)
 
+            # ALARMS
+            elif i == "y":
+                # Get Garmin device alarms
+                alarms = api.get_device_alarms()
+                for alarm in alarms:
+                    alarm_id = alarm["alarmId"]
+                    display_json(f"api.get_device_alarms({alarm_id})", alarm)
+
             elif i == "x":
                 # Get Heart Rate Variability (hrv) data
                 display_json(f"api.get_hrv_data({today.isoformat()})", api.get_hrv_data(today.isoformat()))
 
+            elif i == "z":
+                # Get progress summary
+                for metric in ["elevationGain", "duration", "distance", "movingDuration"]:
+                    display_json(
+                        f"api.get_progress_summary_between_dates({today.isoformat()})",
+                        api.get_progress_summary_between_dates(
+                            startdate.isoformat(), today.isoformat(), metric
+                        ))
+
             # Gear
-            elif i == "G":
+            elif i == "A":
                 last_used_device = api.get_device_last_used()
                 display_json(f"api.get_device_last_used()", last_used_device)
                 userProfileNumber = last_used_device["userProfileNumber"]
@@ -433,7 +467,7 @@ def switch(api, i):
         ) as err:
             logger.error("Error occurred: %s", err)
         except KeyError:
-            # Invalid menu option choosen
+            # Invalid menu option chosen
             pass
     else:
         print("Could not login to Garmin Connect, try again later.")

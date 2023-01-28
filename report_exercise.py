@@ -1,6 +1,6 @@
 # from fitparse import FitFile
 # from matplotlib.dates import AutoDateFormatter, AutoDateLocator
-# from statistics import mean
+from statistics import mean
 # from scipy.signal import savgol_filter
 # from IPython.display import display, HTML
 # from typing import Any
@@ -25,8 +25,7 @@ sleep_html = ''
 sleep_list = []
 today = datetime.date.today()
 #startdate = today - datetime.timedelta(days=7)
-x = []
-weight = []
+#x = []
 meals_text = ''
 meals_html = ''
 meal_list = []
@@ -83,18 +82,35 @@ if isinstance(weather['temp'], (int, float)):
 
 def save_weight(api, actualday):
     x = []
+    weight = []
     filename_prefix = actualday.strftime("%Y_%m_%d")
     startdate = actualday - datetime.timedelta(days=7)
     for data in api.get_body_composition(startdate.isoformat(), actualday.isoformat())["dateWeightList"]:
         x.append(datetime.datetime.fromtimestamp(data['date'] / 1000))
         weight.append(data['weight'] / 1000)
+    meanweight = np.array([mean(weight)] * len(weight))
     fig, ax = plt.subplots(figsize=(15, 5.2))
-    ax.set_xlabel('Súly')
-    ax.set_ylabel('Dátum')
+    ax.set_xlabel('Dátum')
+    ax.set_ylabel('Súly')
     ax.plot(x, weight, label='Súly')
+    ax.plot(x, meanweight, label="Átlagos Súly")
+    ax.text((x[-1] - x[0]) / 2 + x[0], meanweight[0] + (max(weight) - min(weight)) / 20, "{0:.4}".format(meanweight[0]))
     plt.legend()
     plt.savefig(filename_prefix + '_weight.png')
 
+def save_body_battery(api, actualday):
+    x = []
+    body_battery = []
+    filename_prefix= actualday.strftime("%Y_%m_%d")
+    for data in api.get_body_battery(actualday.isoformat())[0]["bodyBatteryValuesArray"]:
+        x.append(datetime.datetime.fromtimestamp(data[0] / 1000))
+        body_battery.append(data[1])
+    fig, ax = plt.subplots(figsize=(15, 5.2))
+    ax.set_xlabel('Dátum')
+    ax.set_ylabel('BodyBattery')
+    ax.plot(x, body_battery, label='BodyBattery')
+    plt.legend()
+    plt.savefig(filename_prefix + '_BB.png')
 
 def save_sleep(api, date):
     def format_timedelta(td):
@@ -175,10 +191,13 @@ def save_rhr(api, actualday):
         x.append(startdate)
         rhr_list.append(rhr_date['allMetrics']['metricsMap']['WELLNESS_RESTING_HEART_RATE'][0]['value'])
         startdate += datetime.timedelta(days=1)
+    meanRHR = np.array([mean(rhr_list)] * len(rhr_list))
     fig, ax = plt.subplots(figsize=(15, 5.2))
-    ax.set_xlabel('Resting Heart Rate')
-    ax.set_ylabel('Dátum')
+    ax.set_xlabel('Dátum')
+    ax.set_ylabel('Resting Heart Rate')
     ax.plot(x, rhr_list, label='Resting Heart Rate')
+    ax.plot(x, meanRHR, label="Átlagos RHR")
+    ax.text((x[-1] - x[0]) / 2 + x[0], meanRHR[0] + (max(rhr_list)-min(rhr_list))/20, "{0:.3}".format(meanRHR[0]))
     plt.legend()
     plt.savefig(filename_prefix + '_rhr.png')
 
@@ -221,6 +240,7 @@ if today == current_date:
 while current_date <= today:
     sleep_list.append(save_sleep(api, current_date))
     meal_list.append(collect_meals(current_date))
+    save_body_battery(api, current_date)
     current_date += datetime.timedelta(days=1)
 
 laps_dataframe.insert(laps_dataframe.columns.get_loc("Max. pulzus") + 1, 'Min. pulzus', np.nan)

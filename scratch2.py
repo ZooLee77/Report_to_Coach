@@ -3,6 +3,7 @@ from fitparse import FitFile
 import matplotlib.pyplot as plt
 import matplotlib.pyplot as pyplot
 #import numpy as np
+from statistics import mean
 import pandas as pd
 #import matplotlib as mpl
 #from tabulate import tabulate
@@ -31,12 +32,12 @@ password = os.getenv("garmin_password")
 print(email)
 print(password)
 
-# for i in range(10):
-#     # Init API
-#     if not api:
-#         api, last_activity = getc.get_last_activity()
-#     else:
-#         break
+for i in range(10):
+    # Init API
+    if not api:
+        api, last_activity = getc.get_last_activity()
+    else:
+        break
 
 
 # activity_id = last_activity["activityId"]
@@ -45,6 +46,24 @@ startdate = today - datetime.timedelta(days=7)
 filename_prefix ="2023_01_19"
 sleep_text = ''
 sleep_list = []
+
+x = []
+rhr_list = []
+filename_prefix = today.strftime("%Y_%m_%d")
+startdate = today - datetime.timedelta(days=7)
+while startdate <= today:
+    rhr_date = api.get_rhr_day(startdate.isoformat())
+    x.append(startdate)
+    rhr_list.append(rhr_date['allMetrics']['metricsMap']['WELLNESS_RESTING_HEART_RATE'][0]['value'])
+    startdate += datetime.timedelta(days=1)
+meanRHR = np.array([mean(rhr_list)] * len(rhr_list))
+fig, ax = plt.subplots(figsize=(15, 5.2))
+ax.set_xlabel('Dátum')
+ax.set_ylabel('Resting Heart Rate')
+ax.plot(x, rhr_list, label='Resting Heart Rate')
+ax.plot(x, meanRHR, label="Átlagos RHR")
+ax.text((x[-1] - x[0]) / 2 + x[0], meanRHR[0] + (max(rhr_list)-min(rhr_list))/20, "{0:.3}".format(meanRHR[0]))
+plt.legend()
 #
 # client = myfitnesspal.Client()
 # day = client.get_date(today)

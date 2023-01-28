@@ -1,5 +1,5 @@
 fitparse==1.2.0
-garminconnect==0.1.52
+garminconnect==0.1.53
 matplotlib==3.6.3
 pwinput==1.0.2
 readchar==4.0.3
