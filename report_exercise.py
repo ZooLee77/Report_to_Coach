@@ -36,12 +36,9 @@ rpe_map = {10: "1/10 - Nagyon könnyű", 20: "2/10 - Könnyű", 30: "3/10 - Mér
            90: "9/10- Rendkívül nehéz",
            100: "Maximális"}
 
-for i in range(10):
-    # Init API
-    if not api:
-        api, last_activity = getc.get_last_activity()
-    else:
-        break
+# Init API
+if not api:
+    api, last_activity = getc.get_last_activity()
 
 activity_id = last_activity["activityId"]
 # activity_id = "10341956145"
@@ -97,6 +94,7 @@ def save_weight(api, actualday):
     ax.text((x[-1] - x[0]) / 2 + x[0], meanweight[0] + (max(weight) - min(weight)) / 20, "{0:.4}".format(meanweight[0]))
     plt.legend()
     plt.savefig(filename_prefix + '_weight.png')
+    plt.close(fig)
 
 def save_body_battery(api, actualday):
     x = []
@@ -111,6 +109,7 @@ def save_body_battery(api, actualday):
     ax.plot(x, body_battery, label='BodyBattery')
     plt.legend()
     plt.savefig(filename_prefix + '_BB.png')
+    plt.close(fig)
 
 def save_sleep(api, date):
     def format_timedelta(td):
@@ -159,6 +158,7 @@ def save_sleep(api, date):
     ax.set_yticks([0, 1, 2, 3])
     plt.yticks(ticks=[0, 1, 2, 3], labels=["Mély", "Éber", "REM", "Ébrenlét"], fontsize=12)
     plt.savefig(filename_prefix + '_sleep.png')
+    plt.close(fig)
     sleep_data = [["Alvási adatok: ", "Alvási eredmény ", "Az alvás egésze ", "Alvásról visszajelzés ", "Teljes hossz ",
                    "Alvási stress ", "Mély alvás ", "Könnyű alvás ", "REM ", "Ébrenlét "],
                   [sleep['dailySleepDTO']['calendarDate'],
@@ -200,6 +200,7 @@ def save_rhr(api, actualday):
     ax.text((x[-1] - x[0]) / 2 + x[0], meanRHR[0] + (max(rhr_list)-min(rhr_list))/20, "{0:.3}".format(meanRHR[0]))
     plt.legend()
     plt.savefig(filename_prefix + '_rhr.png')
+    plt.close(fig)
 
 def collect_meals(actualday):
     client = myfitnesspal.Client()
@@ -466,6 +467,7 @@ def plotter_dict(first, second=None, third=None):
     ax1.legend(lns, labs, loc=0)
     plt.tight_layout()
     plt.savefig(filename_prefix + filename_suffix + '.png')
+    plt.close(fig)
 
 
 breath_dict = {'label': 'Légzésszám', 'plot_color': '#B0E1F7', 'suffix': '_breath', 'data': records_dataframe['Breath']}

@@ -67,7 +67,7 @@ def read_fit_file_records(filename):
     # power_smooth_10_FFT = savgol_filter(power, 151, 3) # window size 151, polynomial order 3
     #negativot kiszedni!
     power_smooth_3_fft = savgol_filter(power, 51, 3)  # window size 51, polynomial order 3
-    print('Rec_Timestamp', len(timestamp))
+    print('Rec_Timestamp', len(timestamp)) # TODO add timezone
     print('heart_rate', len(heart_rate))
     print('power', len(power))
     # print('power_smooth_10', len(power_smooth_10))
