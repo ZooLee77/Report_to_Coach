@@ -10,7 +10,10 @@ import pandas as pd
 from fitparse import FitFile
 import numpy as np
 
+
 def read_fit_file_records(filename):
+    # read fit file and store all data into multiple lists, add NaN if data is missing
+    # then
     power = []
     #power_smooth_3_fft = []
     heart_rate = []
@@ -34,11 +37,12 @@ def read_fit_file_records(filename):
     for record in fit_file.get_messages("record"):
         # Records can contain multiple pieces of data (ex: timestamp, latitude, longitude, etc)
         for data in record:
-            # Print the name and value of the data (and the units if it has any)
+            # Collect the name and value of the data (and the units if it has any)
             if data.name == 'Power' or data.name == 'power':
                 power.append(data.value)
-            if data.name == 'unknown_108': #breath
-                breath.append(data.value/100)
+            # Garmin use 108 name for breath
+            if data.name == 'unknown_108':
+                breath.append(data.value / 100)
             if data.name == 'timestamp':
                 timestamp.append(data.value)
             if data.name == 'enhanced_speed':
@@ -65,9 +69,9 @@ def read_fit_file_records(filename):
             gear_ratio.append(np.nan)
 
     # power_smooth_10_FFT = savgol_filter(power, 151, 3) # window size 151, polynomial order 3
-    #negativot kiszedni!
+    # TODO remove the negative values!
     power_smooth_3_fft = savgol_filter(power, 51, 3)  # window size 51, polynomial order 3
-    print('Rec_Timestamp', len(timestamp)) # TODO add timezone
+    print('Rec_Timestamp', len(timestamp))  # TODO add timezone
     print('heart_rate', len(heart_rate))
     print('power', len(power))
     # print('power_smooth_10', len(power_smooth_10))
@@ -78,10 +82,8 @@ def read_fit_file_records(filename):
     print('cadence', len(cadence))
 
     records_df = pd.DataFrame({"Rec_Timestamp": timestamp, "Heartrate": heart_rate,
-                        "Altitude": altitude, "Speed": speed, "Cadence": cadence, "Breath": breath,
-                        "GearRatio": gear_ratio, "Power": power, "Power_smooth_3_FFT": power_smooth_3_fft})
-
-
+                               "Altitude": altitude, "Speed": speed, "Cadence": cadence, "Breath": breath,
+                               "GearRatio": gear_ratio, "Power": power, "Power_smooth_3_FFT": power_smooth_3_fft})
     return records_df
 
 def read_fit_file_laps(filename):
@@ -252,7 +254,7 @@ def read_fit_file_workout(filename):
                 workout_step_message_index.append(data.value)
             if data.name == 'duration_type':
                 workout_step_duration_type.append(data.value)
-            if data.name == 'target_value' or data.name == 'repeat_steps' or data.name == 'target_speed_zone'\
+            if data.name == 'target_value' or data.name == 'repeat_steps' or data.name == 'target_speed_zone' \
                     or data.name == 'target_hr_zone':
                 workout_step_target_value.append(data.value)
             if data.name == 'target_type':
