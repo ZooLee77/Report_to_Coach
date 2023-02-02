@@ -51,46 +51,62 @@ x = []
 rhr_list = []
 filename_prefix = today.strftime("%Y_%m_%d")
 startdate = today - datetime.timedelta(days=7)
-while startdate <= today:
-    rhr_date = api.get_rhr_day(startdate.isoformat())
-    x.append(startdate)
-    rhr_list.append(rhr_date['allMetrics']['metricsMap']['WELLNESS_RESTING_HEART_RATE'][0]['value'])
-    startdate += datetime.timedelta(days=1)
-meanRHR = np.array([mean(rhr_list)] * len(rhr_list))
+
+
+
+x = []
+activityszint = []
+filename_prefix = today.strftime("%Y_%m_%d")
+sleep = api.get_sleep_data(today.isoformat())
+for data in sleep["sleepLevels"]:
+    x.append(datetime.datetime.strptime(data['startGMT'], "%Y-%m-%dT%H:%M:%S.%f"))
+    x.append(datetime.datetime.strptime(data['endGMT'], "%Y-%m-%dT%H:%M:%S.%f") - datetime.timedelta(seconds=1))
+    activityszint.append(data['activityLevel'])
+    activityszint.append(data['activityLevel'])
+eber = np.array([0.9] * len(activityszint))  # 66B2FF
+rem = np.array([1.9] * len(activityszint))  # 990099
+ebrenlet = np.array([2.9] * len(activityszint))  # FF66B2
+
 fig, ax = plt.subplots(figsize=(15, 5.2))
+ax.set_ylabel('Alvási szakaszok')
 ax.set_xlabel('Dátum')
-ax.set_ylabel('Resting Heart Rate')
-ax.plot(x, rhr_list, label='Resting Heart Rate')
-ax.plot(x, meanRHR, label="Átlagos RHR")
-ax.text((x[-1] - x[0]) / 2 + x[0], meanRHR[0] + (max(rhr_list)-min(rhr_list))/20, "{0:.3}".format(meanRHR[0]))
-plt.legend()
-#
-# client = myfitnesspal.Client()
-# day = client.get_date(today)
-#
-# meal_name = [today, 'Név']
-# meal_quantity = ['', 'Mennyiség']
-# meal_calories = ['', 'Kalória']
-# meal_sum_calories = 0
-#
-# for meals in day.meals:
-#     meal_name.append(meals.name)
-#     meal_quantity.append('')
-#     meal_calories.append('')
-#     for entries in meals.entries:
-#         meal_name.append(entries.name)
-#         meal_quantity.append(entries.quantity)
-#         meal_calories.append(entries['calories'])
-#         meal_sum_calories += float(entries['calories'])
-#
-# meal_name.append("Összesen")
-# meal_quantity.append('')
-# meal_calories.append(meal_sum_calories)
-# meal_data_df = pd.DataFrame([meal_name, meal_quantity, meal_calories])
-# print(meal_data_df.transpose())
-#
-# # "bodyBatteryChargedValue": 37,
-# # "bodyBatteryDrainedValue": 0,
-# # "bodyBatteryHighestValue": 81,
-# # "bodyBatteryLowestValue": 44,
-#
+plt.ylim([-1, max(activityszint)])
+ax.plot(x, activityszint, label='Alvás')
+ax.fill_between(x, -1, 0, where=(activityszint < eber), color='#004C99', alpha=0.5)
+ax.fill_between(x, -1, 1, where=(
+    list(map(lambda x, y: x and y, (activityszint > eber), (activityszint < rem)))), color='#66B2FF', alpha=0.5)
+ax.fill_between(x, -1, 2, where=(
+    list(map(lambda x, y: x and y, (activityszint > rem), (activityszint < ebrenlet)))), color='#990099', alpha=0.5)
+ax.fill_between(x, -1, 3, where=(activityszint > ebrenlet), color='#FF66B2', alpha=0.5)
+plt.xlim(x[0], x[-1])
+start_value = x[0].strftime("%m-%d %H:%M")
+end_value = x[-1].strftime("%m-%d %H:%M")
+ax.annotate(f"Start: {start_value}", xy=(ax.get_xlim()[0], -1), xycoords='data', xytext=(-50, -30),
+            textcoords='offset points', arrowprops=dict(arrowstyle="->",
+                                                        connectionstyle="arc3,rad=.2"))
+ax.annotate(f"End: {end_value}", xy=(ax.get_xlim()[1], -1), xycoords='data', xytext=(-50, -30),
+            textcoords='offset points', arrowprops=dict(arrowstyle="->",
+                                                        connectionstyle="arc3,rad=.2"))
+ax.set_yticks([0, 1, 2, 3])
+plt.yticks(ticks=[0, 1, 2, 3], labels=["Mély", "Éber", "REM", "Ébrenlét"], fontsize=12)
+plt.savefig(filename_prefix + '_sleep.png')
+plt.close(fig)
+sleep_data = [["Alvási adatok: ", "Alvási eredmény ", "Az alvás egésze ", "Alvásról visszajelzés ", "Teljes hossz ",
+               "Alvási stress ", "Mély alvás ", "Könnyű alvás ", "REM ", "Ébrenlét "],
+              [sleep['dailySleepDTO']['calendarDate'],
+               str(sleep['dailySleepDTO']['sleepScores']["overall"]['value']) + " /100", '', '',
+               format_timedelta(datetime.timedelta(seconds=sleep['dailySleepDTO']['sleepTimeSeconds'])),
+               sleep['dailySleepDTO']['avgSleepStress'],
+               format_timedelta(datetime.timedelta(seconds=sleep['dailySleepDTO']['deepSleepSeconds'])),
+               format_timedelta(datetime.timedelta(seconds=sleep['dailySleepDTO']['lightSleepSeconds'])),
+               format_timedelta(datetime.timedelta(seconds=sleep['dailySleepDTO']['remSleepSeconds'])),
+               format_timedelta(datetime.timedelta(seconds=sleep['dailySleepDTO']['awakeSleepSeconds']))],
+              ['', '', sleep['dailySleepDTO']['sleepScores']["overall"]['qualifierKey'],
+               sleep['dailySleepDTO']['sleepScoreFeedback'],
+               sleep['dailySleepDTO']['sleepScores']["totalDuration"]['qualifierKey'],
+               sleep['dailySleepDTO']['sleepScores']["stress"]['qualifierKey'],
+               sleep['dailySleepDTO']['sleepScores']["deepPercentage"]['qualifierKey'],
+               sleep['dailySleepDTO']['sleepScores']["lightPercentage"]['qualifierKey'],
+               sleep['dailySleepDTO']['sleepScores']["remPercentage"]['qualifierKey'],
+               sleep['dailySleepDTO']['sleepScores']["awakeCount"]['qualifierKey']]]
+sleep_data_df = pd.DataFrame(sleep_data)

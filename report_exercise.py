@@ -90,7 +90,7 @@ def save_weight(api, actualday):
     ax.set_xlabel('Dátum')
     ax.set_ylabel('Súly')
     ax.plot(x, weight, label='Súly')
-    ax.plot(x, meanweight, label="Átlagos Súly")
+    ax.plot(x, meanweight, label="Átlagos súly")
     ax.text((x[-1] - x[0]) / 2 + x[0], meanweight[0] + (max(weight) - min(weight)) / 20, "{0:.4}".format(meanweight[0]))
     plt.legend()
     plt.savefig(filename_prefix + '_weight.png')
