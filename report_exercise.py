@@ -276,8 +276,8 @@ for e in range(len(laps_dataframe.index)):
 
 laps_dataframe.loc[len(laps_dataframe.index), ["Átlagos pulzusszám"]] = records_dataframe["Heartrate"].mean()
 if 'Workout_HR_min' in records_dataframe.keys():
-    temp_filt = ((records_dataframe['Heartrate'] >= records_dataframe['Workout_HR_min']) & (
-            records_dataframe['Heartrate'] <= records_dataframe['Workout_HR_max']))
+    temp_filt = (records_dataframe['Heartrate'] >= records_dataframe['Workout_HR_min']) & (
+            records_dataframe['Heartrate'] <= records_dataframe['Workout_HR_max'])
     workout_dic['HR percent'] = records_dataframe.loc[temp_filt, 'Heartrate'].count() / sum(
         records_dataframe['Workout_HR_min'] > 0)
 if 'Workout_speed_min' in records_dataframe.keys():
