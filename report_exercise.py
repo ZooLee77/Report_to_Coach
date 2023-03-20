@@ -72,7 +72,7 @@ if "directWorkoutFeel" in evaluation['summaryDTO'].keys():
 
 weather = api.get_activity_weather(activity_id)
 if isinstance(weather['temp'], (int, float)):
-    text_weather = "Hömérséklet: " + "{0:.4}".format((weather['temp'] - 32) / 1.8) + "(C) Hőérzet: " + "{0:.4}".format(
+    text_weather = "Hőmérséklet: " + "{0:.4}".format((weather['temp'] - 32) / 1.8) + "(C) Hőérzet: " + "{0:.4}".format(
         (weather['apparentTemp'] - 32) / 1.8) + "(C) Páratartalom: " + str(
         weather['relativeHumidity']) + "% Szélsebesség: " + "{0:.4}".format(weather['windSpeed'] * 1.852) + " kmph"
 
