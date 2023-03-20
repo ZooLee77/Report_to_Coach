@@ -247,7 +247,10 @@ def read_fit_file_workout(filename):
             if data.name == 'duration_time' or data.name == 'duration_distance' or data.name == 'duration_step':
                 workout_step_duration.append(data.value)
             if data.name == 'custom_target_heart_rate_low' or data.name == 'custom_target_speed_low':
-                workout_step_target_low.append(data.value)
+                if data.value == "bpm_offset":
+                    workout_step_target_low.append(100)
+                else:
+                    workout_step_target_low.append(data.value)
             if data.name == 'custom_target_heart_rate_high' or data.name == 'custom_target_speed_high':
                 workout_step_target_high.append(data.value)
             if data.name == 'message_index':
