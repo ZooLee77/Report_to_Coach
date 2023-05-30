@@ -41,7 +41,7 @@ if not api:
     api, last_activity = getc.get_last_activity()
 
 activity_id = last_activity["activityId"]
-# activity_id = "10341956145"
+#activity_id = "11026612740"
 # print(json.dumps(last_activity, indent=4))
 fit_file_name = getc.download_activity(api, activity_id)
 
@@ -316,6 +316,8 @@ laps_dataframe['Kör kezdő idő'] = laps_dataframe['Kör kezdő idő'].dt.strft
 
 
 def format_speed(speed):
+    if speed == 0:
+        speed = 1
     lap_minute, lap_second = divmod(1000 / (speed * 60), 1)
     return '{: 02d}:{: 02d}'.format(int(lap_minute), int(lap_second * 60))
 
