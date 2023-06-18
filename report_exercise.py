@@ -41,7 +41,7 @@ if not api:
     api, last_activity = getc.get_last_activity()
 
 activity_id = last_activity["activityId"]
-#activity_id = "11026612740"
+# activity_id = "10341956145"
 # print(json.dumps(last_activity, indent=4))
 fit_file_name = getc.download_activity(api, activity_id)
 
@@ -125,6 +125,9 @@ def save_sleep(api, date):
     filename_prefix = date.strftime("%Y_%m_%d")
     sleep = api.get_sleep_data(date.isoformat())
     if not sleep['dailySleepDTO']['id']:
+        return ""
+    #if "directWorkoutFeel" in evaluation['summaryDTO'].keys():
+    if not "value" in sleep['dailySleepDTO']['sleepScores']["overall"].keys():
         return ""
     for data in sleep["sleepLevels"]:
         x.append(datetime.datetime.strptime(data['startGMT'], "%Y-%m-%dT%H:%M:%S.%f"))
@@ -240,7 +243,7 @@ if today == current_date:
             break
 while current_date <= today:
     sleep_list.append(save_sleep(api, current_date))
-    meal_list.append(collect_meals(current_date))
+#    meal_list.append(collect_meals(current_date))
     save_body_battery(api, current_date)
     current_date += datetime.timedelta(days=1)
 
