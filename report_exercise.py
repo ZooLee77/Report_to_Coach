@@ -191,8 +191,9 @@ def save_rhr(api, actualday):
     startdate = actualday - datetime.timedelta(days=7)
     while startdate <= actualday:
         rhr_date = api.get_rhr_day(startdate.isoformat())
-        x.append(startdate)
-        rhr_list.append(rhr_date['allMetrics']['metricsMap']['WELLNESS_RESTING_HEART_RATE'][0]['value'])
+        if isinstance(rhr_date['allMetrics']['metricsMap']['WELLNESS_RESTING_HEART_RATE'][0]['value'], float):
+            x.append(startdate)
+            rhr_list.append(rhr_date['allMetrics']['metricsMap']['WELLNESS_RESTING_HEART_RATE'][0]['value'])
         startdate += datetime.timedelta(days=1)
     meanRHR = np.array([mean(rhr_list)] * len(rhr_list))
     fig, ax = plt.subplots(figsize=(15, 5.2))
