@@ -85,6 +85,8 @@ def save_weight(api, actualday):
     for data in api.get_body_composition(startdate.isoformat(), actualday.isoformat())["dateWeightList"]:
         x.append(datetime.datetime.fromtimestamp(data['date'] / 1000))
         weight.append(data['weight'] / 1000)
+    if len(weight) == 0:
+        return
     meanweight = np.array([mean(weight)] * len(weight))
     fig, ax = plt.subplots(figsize=(15, 5.2))
     ax.set_xlabel('Dátum')
