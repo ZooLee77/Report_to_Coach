@@ -41,7 +41,7 @@ if not api:
     api, last_activity = getc.get_last_activity()
 
 activity_id = last_activity["activityId"]
-# activity_id = "10341956145"
+# activity_id = "11710051631"
 # print(json.dumps(last_activity, indent=4))
 fit_file_name = getc.download_activity(api, activity_id)
 

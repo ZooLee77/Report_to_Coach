@@ -8,6 +8,7 @@ import requests
 # import pwinput
 # import readchar
 import zipfile
+from garth.exc import GarthHTTPError
 
 from garminconnect import (
     Garmin,
@@ -24,6 +25,7 @@ logger = logging.getLogger(__name__)
 # Load environment variables if defined
 email = os.getenv("garmin_email")
 password = os.getenv("garmin_password")
+tokenstore = os.getenv("GARMINTOKENS") or "~/.garminconnect"
 api = None
 
 # Example selections and settings
@@ -73,47 +75,32 @@ def init_api(email, password):
     """Initialize Garmin API with your credentials."""
 
     try:
-        # Try to load the previous session
-        with open("session.json") as f:
-            saved_session = json.load(f)
-
-            print(
-                "Login to Garmin Connect using session loaded from 'session.json'...\n"
-            )
-
-            # Use the loaded session for initializing the API (without need for credentials)
-            api = Garmin(session_data=saved_session)
-
-            # Login using the
-            api.login()
-
-    except (FileNotFoundError, GarminConnectAuthenticationError):
-        # Login to Garmin Connect portal with credentials since session is invalid or not present.
         print(
-            "Session file not present or turned invalid, login with your Garmin Connect credentials.\n"
-            "NOTE: Credentials will not be stored, the session cookies will be stored in 'session.json' for future use.\n"
+            f"Trying to login to Garmin Connect using token data from '{tokenstore}'...\n"
+        )
+        garmin = Garmin()
+        garmin.login(tokenstore)
+    except (FileNotFoundError, GarthHTTPError, GarminConnectAuthenticationError):
+        # Session is expired. You'll need to log in again
+        print(
+            "Login tokens not present, login with your Garmin Connect credentials to generate them.\n"
+            f"They will be stored in '{tokenstore}' for future use.\n"
         )
         try:
             # Ask for credentials if not set as environment variables
             if not email or not password:
                 email, password = get_credentials()
 
-            api = Garmin(email, password)
-            api.login()
+            garmin = Garmin(email, password)
+            garmin.login()
+            # Save tokens for next login
+            garmin.garth.dump(tokenstore)
 
-            # Save session dictionary to json file for future use
-            with open("session.json", "w", encoding="utf-8") as f:
-                json.dump(api.session_data, f, ensure_ascii=False, indent=4)
-        except (
-                GarminConnectConnectionError,
-                GarminConnectAuthenticationError,
-                GarminConnectTooManyRequestsError,
-                requests.exceptions.HTTPError,
-        ) as err:
-            logger.error("Error occurred during Garmin Connect communication: %s", err)
+        except (FileNotFoundError, GarthHTTPError, GarminConnectAuthenticationError, requests.exceptions.HTTPError) as err:
+            logger.error(err)
             return None
 
-    return api
+    return garmin
 
 
 def get_last_activity(api=None):
