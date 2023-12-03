@@ -41,14 +41,12 @@ if not api:
     api, last_activity = getc.get_last_activity()
 
 activity_id = last_activity["activityId"]
-# activity_id = "11710051631"
+#activity_id = "12942408747"
 # print(json.dumps(last_activity, indent=4))
 fit_file_name = getc.download_activity(api, activity_id)
 
 
-# fit_file_list = ['10153960586_ACTIVITY.fit', '10168131101_ACTIVITY.fit', '10176445328_ACTIVITY.fit',
-#                  '10190995780_ACTIVITY.fit', '10197069218_ACTIVITY.fit', '10207850540_ACTIVITY.fit',
-#                  '10217521774_ACTIVITY.fit', '10225157717_ACTIVITY.fit', '10241888920_ACTIVITY.fit']
+# fit_file_list = ['10153960586_ACTIVITY.fit']
 
 records_dataframe = readfit.read_fit_file_records(fit_file_name)
 laps_dataframe = readfit.read_fit_file_laps(fit_file_name)
