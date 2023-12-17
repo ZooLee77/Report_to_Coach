@@ -5,12 +5,13 @@ import os
 ncoreuser = os.getenv("ncore_user")
 ncorepassword = os.getenv("ncore_password")
 
-
 client = Client()
 client.login(ncoreuser, ncorepassword)
 
+print("Ncore logged in")
 torrent = client.search(pattern="Forrest gump", type=SearchParamType.HD_HUN, number=1,
                             sort_by=ParamSort.SEEDERS, sort_order=ParamSeq.DECREASING)[0]
 
-client.download(torrent, "/tmp")
+#client.download(torrent, "tmp")
+print(torrent)
 client.logout()
